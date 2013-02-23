@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2011, Matthias Mann
+ * Copyright (c) 2008-2012, Matthias Mann
  *
  * All rights reserved.
  *
@@ -27,38 +27,58 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package de.matthiasmann.textureloader;
-
-import de.matthiasmann.jpegdecoder.JPEGDecoder;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.ByteBuffer;
+package de.matthiasmann.jpegdecoder;
 
 /**
  *
  * @author Matthias Mann
  */
-public class TextureLoaderJPEG extends TextureLoader {
-    
-    private JPEGDecoder decoder;
+public class Component {
 
-    public TextureLoaderJPEG(URL url) {
-        super(url);
+    final int id;
+
+    int dcPred;
+    Huffman huffDC;
+    Huffman huffAC;
+    byte[] dequant;
+    int blocksPerMCUVert;
+    int blocksPerMCUHorz;
+    int width;
+    int height;
+    int minReqWidth;
+    int minReqHeight;
+    int outPos;
+    int upsampler;
+
+    Component(int id) {
+        this.id = id;
     }
 
-    @Override
-    public boolean open() throws IOException {
-        inputStream = url.openStream();
-        decoder = new JPEGDecoder(inputStream);
-        decoder.decodeHeader();
-        width = decoder.getImageWidth();
-        height = decoder.getImageHeight();
-        format = Texture.Format.RGBA;
-        return decoder.startDecode();
+    public int getID() {
+        return id;
     }
 
-    @Override
-    public void decode(ByteBuffer bb) throws IOException {
-        decoder.decodeRGB(bb, width*4, decoder.getNumMCURows());
+    public int getMinReqWidth() {
+        return minReqWidth;
+    }
+
+    public int getMinReqHeight() {
+        return minReqHeight;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public int getBlocksPerMCUHorz() {
+        return blocksPerMCUHorz;
+    }
+
+    public int getBlocksPerMCUVert() {
+        return blocksPerMCUVert;
     }
 }
