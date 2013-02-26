@@ -1,4 +1,5 @@
 import de.matthiasmann.twl.utils.PNGDecoder;
+import net.sf.image4j.codec.bmp.BMPDecoder;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
 import org.lwjgl.input.Mouse;
@@ -7,6 +8,7 @@ import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
@@ -41,41 +43,87 @@ public class JavaPMSViewer{
         }
 
         //Load map data
-        map = new Map("C:/Program Files/Soldat163/maps/Ctf_Ash.PMS");
+        map = new Map("C:/Program Files/Soldat163/maps/Ctf_Run.PMS");
 
 
-        InputStream input = null;
-        PNGDecoder dec = null;
-        try{
-            //Get the input stream for the texture
-            File pngFile = new File("C:/Program Files/Soldat163/textures/riverbed.png");
-            //TODO: Add support for bmp textures, and get texture name from map file
-            URL pngURL = pngFile.toURI().toURL();   //Using png version of the actual bmp file until I sort out loading bmp textures
-            input = pngURL.openStream();
 
-            //create the PNG decoder
-            dec = new PNGDecoder(input);
-
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-
-        //Get image dimensions
-        int width = dec.getWidth();
-        int height = dec.getHeight();
+        int width = 0;
+        int height = 0;
 
         //Using RGBA so 4 bytes per pixel
         final int bpp = 4;
 
         //Create a buffer to hold pixel data
-        ByteBuffer buf = BufferUtils.createByteBuffer(bpp * width * height);
+        ByteBuffer buf = null;
 
         try{
-            //Decode image in to buffer in RGBA format
-            dec.decode(buf, width * bpp, PNGDecoder.Format.RGBA);
-        }catch (Exception e){
+            //Get the input stream for the texture
+            String texture = map.getTexture();
+            File texFile = new File("C:/Program Files/Soldat163/textures/" + texture);
+            Display.setTitle(texture);
+            URL texURL = texFile.toURI().toURL();   //Using png version of the actual bmp file until I sort out loading bmp textures
+            input = texURL.openStream();
+
+
+
+            if(texture.substring(texture.length()-3).toLowerCase().equals("png")){
+                //create the PNG decoder
+                decpng = new PNGDecoder(input);
+
+                //Get image dimensions
+                width = decpng.getWidth();
+                height = decpng.getHeight();
+
+                buf = BufferUtils.createByteBuffer(bpp * width * height);
+
+                try{
+                    //Decode image in to buffer in RGBA format
+                    decpng.decode(buf, width * bpp, PNGDecoder.Format.RGBA);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
+            }else if(texture.substring(texture.length()-3).toLowerCase().equals("bmp")){
+                decbmp = new BMPDecoder(input);
+                BufferedImage img = decbmp.getBufferedImage();
+                width = img.getWidth();
+                height = img.getHeight();
+
+                int[] pixels = new int[width * height];
+
+                img.getRGB(0, 0, width, height, pixels, 0, width);
+
+                buf = BufferUtils.createByteBuffer(bpp * width * height);
+
+                for(int y = 0; y < height; y++){
+                    for(int x = 0; x < width; x++){
+                        int pixel = pixels[y * width + x];
+                        buf.put((byte) ((pixel >> 16) & 0xFF));     // Red component
+                        buf.put((byte) ((pixel >> 8) & 0xFF));      // Green component
+                        buf.put((byte) (pixel & 0xFF));               // Blue component
+                        buf.put((byte) ((pixel >> 24) & 0xFF));    // Alpha component. Only for RGBA
+                    }
+                }
+
+
+
+
+            }else{
+                System.out.println("Couldn't load texture, not bmp or png format");
+                System.exit(1);
+            }
+
+        }catch(Exception e){
             e.printStackTrace();
         }
+
+
+
+
+
+
+
+
 
         //Flip to buffer ready for OpenGL to use
         buf.flip();
