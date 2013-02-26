@@ -46,7 +46,9 @@ public class JavaPMSViewer{
         map = new Map("C:/Program Files/Soldat163/maps/Ctf_Run.PMS");
 
 
-
+        InputStream input = null;
+        PNGDecoder decpng = null;
+        BMPDecoder decbmp = null;
         int width = 0;
         int height = 0;
 
